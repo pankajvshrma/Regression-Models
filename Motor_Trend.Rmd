@@ -1,0 +1,177 @@
+---
+title: "Motor_Trend"
+author: "Pankaj Sharma"
+date: "12 November 2015"
+output: html_document
+---
+
+This is a prject assignment of the Coursera specialization named `Regression Models`.In this project I have used `mtcars` dataset.We build regression models and exploratory data analysis to find how transmissions ie `automatic` or `manual` effects `MPG`
+
+
+The main objective of this research is
+
+
+* Is an automatic or manual transmission better for MPG?
+
+* Quantifying how different is the MPG between automatic and manual transmissions?
+
+# Data Processing and Transformation
+
+```{r}
+library(ggplot2)
+data(mtcars)
+str(mtcars)
+
+
+```
+
+Converting some features into factors for processing
+
+```{r}
+mtcars[,2]<-as.factor(mtcars[,2])
+mtcars[,8]<-as.factor(mtcars[,8])
+mtcars[,10]<-as.factor(mtcars[,10])
+mtcars[,11]<-as.factor(mtcars[,11])
+mtcars[,9]<-factor(mtcars[,9],labels=c('Automatic','Manual'))
+
+```
+
+# Exploratory Data Analysis
+
+
+* In this section we use exploratory analysis like boxplot and pairs graph.From the plot we notice that the variables <span style="color:red">cyl</span>,  <span style="color:red">disp</span>,<span style="color:red">hp</span> and <span style="color:red">wt</span> are highly correlated with each other.
+
+
+* By Box Plot between <span style="color:red">mpg</span> and <span style="color:red">am</span> we found out that manual transimssion yields higher values of mpg
+
+![Pair Graph](Pair.png)
+
+
+
+```{r,echo=TRUE}
+
+boxplot(mtcars$mpg~mtcars$am, data=mtcars, notch=FALSE, 
+  col=(c("gold","darkgreen")),
+  main="MPG VS TRANSMISSION", xlab="Transmission",ylab="MPG")
+
+
+```
+
+# Hypothesis
+
+At this step we take a `NULL` hypothesis that `MPG` of `Automatic` and `Manual` transmission are from the same population.We take a two sample T-test to show it.
+
+```{r}
+result<- t.test(mpg ~ am,mtcars)
+result$p.value
+result$estimate
+
+
+```
+* As <span style="color:red">p-value<0.01</span> it is significant and our hypothesis is wrong.
+
+* Also estimates show that mean in group manual is about <span style="color:red">7</span>  more than that of group automatic which shows that they are from <span style="color:red">different poplulations.</span>
+
+
+# Regression Analysis
+
+First we build linear regression models with all the regressors
+
+```{r}
+fit<- lm(mpg ~.,mtcars)
+summary(fit)
+
+
+```
+
+This model has a 
+
+
+* residual error of <span style="color:red">2.833 </span> on 15 degrees of freedom
+
+
+* None of variables are marked significant at significant level <span style="color:red">0.05 </span>
+
+So we need to search a better formula to model.First we go for both <span style="color:red">forward and backward selection</span> of variables
+
+
+We form a new model 
+
+
+# Variable Selection
+
+```{r,results='hide'}
+new_model <- step(fit, direction="both")
+
+
+
+```
+
+
+```{r}
+summary(new_model)
+
+```
+
+* The model find out  <span style="color:red">formula = mpg ~ wt + qsec + am </span>as the best formula for reducing residual standard error from <span style="color:red">2.833</span> to <span style="color:red">2.459</span> on <span style="color:red">28</span> degrees of freedom.
+
+Now we form a base model with only <span style="color:red">am</span> as a predictor and <span style="color:red">mpg</span> as a dependent.
+
+# Base Model
+```{r,results='hide'}
+base_model <- lm(mpg ~ am, data = mtcars)
+
+
+```
+```{r}
+summary(base_model)
+
+```
+
+
+* It shows that on average a car has <span style="color:red">17.147 mpg</span>  with automatic transmission and if manual transmission <span style="color:red">7.245 mpg</span is increased.
+
+
+* Adjusted R-squared is as low as <span style="color:red">0.3385</span> which indicates that we need to add more variables to the model.
+
+# Comparing the Models
+
+Now we do a Anova test to compare best model and the base model
+
+```{r}
+anova(base_model,new_model)
+```
+Looking at the results **p-value** obtained for the new model is highly significant.
+
+
+# Residuals and Diagnostics
+
+```{r}
+par(mfrow=c(2,2))
+plot(new_model)
+```
+# Observations
+
+
+From the above plots we can make the following observations.
+
+* The points in the **Residuals vs. Fitted plot** seem to be randomly scattered on the plot and verify the independence condition.
+
+* The **Normal Q-Q plot** consists of the points which mostly fall on the line indicating that the residuals are normally distributed.
+
+* The **Scale-Location plot** consists of points scattered in a constant band pattern, indicating constant variance.
+
+* The **Residuals vs Leverage** some distinct points of interest (outliers or leverage points) in the top right of the plots.
+
+
+# Conclusions
+
+ Based on observations on our best fit model we can conclude that
+
+* Cars with Manual transmission get more miles per gallon mpg compared to cars with Automatic transmission. **(1.8 adjusted by hp, cyl, and wt).**
+
+
+* mpg will decrease by **2.5**(adjusted by hp, cyl, and am) for every **1000 lb** increase in wt. , mpg decreases negligibly with increase of hp.
+
+
+* If number of cylinders, cyl increases from **4 to 6 and 8**, mpg will decrease by a factor of **3 and 2.2** respectively (adjusted by hp, wt, and am). 
